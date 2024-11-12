@@ -18,9 +18,7 @@ public class HTTPClient {
                                          queryParams: QueryParams? = nil,
                                          keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> T {
         let url = try urlString.buildURL(queryParams: queryParams)
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "GET"
-        urlRequest.set(headers: headers)
+        let urlRequest = createURLRequest(url: url, method: "GET", headers: headers)
         
         if enableLogging {
             logger.logRequest(urlRequest)
@@ -57,10 +55,7 @@ public class HTTPClient {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = keyEncodingStrategy
         let body = try encoder.encode(body)
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.httpBody = body
-        urlRequest.set(headers: headers)
+        let urlRequest = createURLRequest(url: url, method: "POST", body: body, headers: headers)
         
         if enableLogging {
             logger.logRequest(urlRequest)
@@ -91,9 +86,7 @@ public class HTTPClient {
                               headers: Headers,
                               enableLogging: Bool = true) async throws {
         let url = try urlString.buildURL(queryParams: nil)
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "DELETE"
-        urlRequest.set(headers: headers)
+        let urlRequest = createURLRequest(url: url, method: "DELETE", headers: headers)
         
         if enableLogging {
             logger.logRequest(urlRequest)
@@ -111,5 +104,18 @@ public class HTTPClient {
             
             throw error
         }
+    }
+    
+    // MARK: - Private
+    private static func createURLRequest(url: URL,
+                                         method: String,
+                                         body: Data? = nil,
+                                         headers: Headers) -> URLRequest {
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = method
+        urlRequest.httpBody = body
+        urlRequest.set(headers: headers)
+        
+        return urlRequest
     }
 }
