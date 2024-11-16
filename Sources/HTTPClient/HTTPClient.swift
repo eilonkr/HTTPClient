@@ -8,15 +8,16 @@
 import Foundation
 import OSLog
 
-public class HTTPClient {
-    private static let logger = Logger(subsystem: "http-client", category: "http-client")
+public extension URLSession {
+    private var logger: Logger {
+        Logger(subsystem: "http-client", category: "http-client")
+    }
     
     // MARK: - Public
-    public static func get<T: Decodable>(_ urlString: String,
-                                         urlSession: URLSession = .shared,
-                                         headers: Headers = [:],
-                                         queryParams: QueryParams? = nil,
-                                         keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> T {
+    func get<T: Decodable>(_ urlString: String,
+                           headers: Headers = [:],
+                           queryParams: QueryParams? = nil,
+                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> T {
         let url = try urlString.buildURL(queryParams: queryParams)
         let urlRequest = createURLRequest(url: url, method: "GET", headers: headers)
         
@@ -25,7 +26,7 @@ public class HTTPClient {
         }
         
         do {
-            let (data, response) = try await urlSession.data(for: urlRequest)
+            let (data, response) = try await self.data(for: urlRequest)
             if enableLogging {
                 logger.logResponse(response, data: data)
             }
@@ -43,14 +44,13 @@ public class HTTPClient {
         }
     }
     
-    public static func post<T: Decodable, U: Encodable>(_ urlString: String,
-                                                        urlSession: URLSession = .shared,
-                                                        body: U,
-                                                        headers: Headers,
-                                                        queryParams: QueryParams? = nil,
-                                                        keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys,
-                                                        keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
-                                                        enableLogging: Bool = true) async throws -> T {
+    func post<T: Decodable, U: Encodable>(_ urlString: String,
+                                          body: U,
+                                          headers: Headers,
+                                          queryParams: QueryParams? = nil,
+                                          keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys,
+                                          keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                                          enableLogging: Bool = true) async throws -> T {
         let url = try urlString.buildURL(queryParams: queryParams)
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = keyEncodingStrategy
@@ -62,7 +62,7 @@ public class HTTPClient {
         }
         
         do {
-            let (data, response) = try await urlSession.data(for: urlRequest)
+            let (data, response) = try await self.data(for: urlRequest)
             
             if enableLogging {
                 logger.logResponse(response, data: data)
@@ -81,10 +81,9 @@ public class HTTPClient {
         }
     }
     
-    public static func delete(_ urlString: String,
-                              urlSession: URLSession = .shared,
-                              headers: Headers,
-                              enableLogging: Bool = true) async throws {
+    func delete(_ urlString: String,
+                headers: Headers,
+                enableLogging: Bool = true) async throws {
         let url = try urlString.buildURL(queryParams: nil)
         let urlRequest = createURLRequest(url: url, method: "DELETE", headers: headers)
         
@@ -93,7 +92,7 @@ public class HTTPClient {
         }
         
         do {
-            let (data, response) = try await urlSession.data(for: urlRequest)
+            let (data, response) = try await self.data(for: urlRequest)
             if enableLogging {
                 logger.logResponse(response, data: data)
             }
@@ -107,10 +106,10 @@ public class HTTPClient {
     }
     
     // MARK: - Private
-    private static func createURLRequest(url: URL,
-                                         method: String,
-                                         body: Data? = nil,
-                                         headers: Headers) -> URLRequest {
+    private func createURLRequest(url: URL,
+                                  method: String,
+                                  body: Data? = nil,
+                                  headers: Headers) -> URLRequest {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method
         urlRequest.httpBody = body
