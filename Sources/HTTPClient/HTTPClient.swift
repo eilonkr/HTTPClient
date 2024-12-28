@@ -8,7 +8,7 @@
 import Foundation
 import OSLog
 
-public extension URLSession {
+public extension URLSession {    
     private var logger: Logger {
         Logger(subsystem: "http-client", category: "http-client")
     }
@@ -50,7 +50,7 @@ public extension URLSession {
                                           queryParams: QueryParams? = nil,
                                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys,
                                           keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
-                                          enableLogging: Bool = true) async throws -> T {
+                                          enableLogging: Bool = true) async throws -> (T, URLResponse) {
         let url = try urlString.buildURL(queryParams: queryParams)
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = keyEncodingStrategy
@@ -71,7 +71,7 @@ public extension URLSession {
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = keyDecodingStrategry
             let result = try decoder.decode(T.self, from: data)
-            return result
+            return (result, response)
         } catch {
             if enableLogging {
                 logger.logError(error)
@@ -81,12 +81,12 @@ public extension URLSession {
         }
     }
     
-    func post<T: Encodable>(_ urlString: String,
-                            body: T,
-                            headers: Headers,
-                            queryParams: QueryParams? = nil,
-                            keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
-                            enableLogging: Bool = true) async throws {
+    @discardableResult func post<T: Encodable>(_ urlString: String,
+                                               body: T,
+                                               headers: Headers,
+                                               queryParams: QueryParams? = nil,
+                                               keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                                               enableLogging: Bool = true) async throws -> URLResponse {
         let url = try urlString.buildURL(queryParams: queryParams)
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = keyEncodingStrategy
@@ -103,6 +103,8 @@ public extension URLSession {
             if enableLogging {
                 logger.logResponse(response, data: Data())
             }
+            
+            return response
         } catch {
             if enableLogging {
                 logger.logError(error)
@@ -112,9 +114,9 @@ public extension URLSession {
         }
     }
     
-    func delete(_ urlString: String,
-                headers: Headers,
-                enableLogging: Bool = true) async throws {
+    @discardableResult func delete(_ urlString: String,
+                                   headers: Headers,
+                                   enableLogging: Bool = true) async throws -> URLResponse {
         let url = try urlString.buildURL(queryParams: nil)
         let urlRequest = createURLRequest(url: url, method: "DELETE", headers: headers)
         
@@ -127,6 +129,8 @@ public extension URLSession {
             if enableLogging {
                 logger.logResponse(response, data: data)
             }
+            
+            return response
         } catch {
             if enableLogging {
                 logger.logError(error)
