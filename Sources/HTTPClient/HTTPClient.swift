@@ -17,7 +17,7 @@ public extension URLSession {
     func get<T: Decodable>(_ urlString: String,
                            headers: Headers = [:],
                            queryParams: QueryParams? = nil,
-                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> T {
+                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> (T, URLResponse) {
         let url = try urlString.buildURL(queryParams: queryParams)
         let urlRequest = createURLRequest(url: url, method: "GET", headers: headers)
         
@@ -34,7 +34,7 @@ public extension URLSession {
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = keyDecodingStrategry
             let result = try decoder.decode(T.self, from: data)
-            return result
+            return (result, response)
         } catch {
             if enableLogging {
                 logger.logError(error)
