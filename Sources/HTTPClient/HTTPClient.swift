@@ -17,7 +17,7 @@ public extension URLSession {
     func get<T: Decodable>(_ urlString: String,
                            headers: Headers = [:],
                            queryParams: QueryParams? = nil,
-                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> (T, URLResponse) {
+                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> T {
         let url = try urlString.buildURL(queryParams: queryParams)
         let urlRequest = createURLRequest(url: url, method: "GET", headers: headers)
         
@@ -31,10 +31,11 @@ public extension URLSession {
                 logger.logResponse(response, data: data)
             }
             
+            try response.checkValidity()
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = keyDecodingStrategry
             let result = try decoder.decode(T.self, from: data)
-            return (result, response)
+            return result
         } catch {
             if enableLogging {
                 logger.logError(error)
@@ -50,7 +51,7 @@ public extension URLSession {
                                           queryParams: QueryParams? = nil,
                                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys,
                                           keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
-                                          enableLogging: Bool = true) async throws -> (T, URLResponse) {
+                                          enableLogging: Bool = true) async throws -> T {
         let url = try urlString.buildURL(queryParams: queryParams)
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = keyEncodingStrategy
@@ -68,10 +69,11 @@ public extension URLSession {
                 logger.logResponse(response, data: data)
             }
             
+            try response.checkValidity()
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = keyDecodingStrategry
             let result = try decoder.decode(T.self, from: data)
-            return (result, response)
+            return result
         } catch {
             if enableLogging {
                 logger.logError(error)
@@ -81,12 +83,12 @@ public extension URLSession {
         }
     }
     
-    @discardableResult func post<T: Encodable>(_ urlString: String,
-                                               body: T,
-                                               headers: Headers,
-                                               queryParams: QueryParams? = nil,
-                                               keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
-                                               enableLogging: Bool = true) async throws -> URLResponse {
+    func post<T: Encodable>(_ urlString: String,
+                            body: T,
+                            headers: Headers,
+                            queryParams: QueryParams? = nil,
+                            keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                            enableLogging: Bool = true) async throws {
         let url = try urlString.buildURL(queryParams: queryParams)
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = keyEncodingStrategy
@@ -104,7 +106,7 @@ public extension URLSession {
                 logger.logResponse(response, data: Data())
             }
             
-            return response
+            try response.checkValidity()
         } catch {
             if enableLogging {
                 logger.logError(error)
@@ -114,9 +116,9 @@ public extension URLSession {
         }
     }
     
-    @discardableResult func delete(_ urlString: String,
-                                   headers: Headers,
-                                   enableLogging: Bool = true) async throws -> URLResponse {
+    func delete(_ urlString: String,
+                headers: Headers,
+                enableLogging: Bool = true) async throws {
         let url = try urlString.buildURL(queryParams: nil)
         let urlRequest = createURLRequest(url: url, method: "DELETE", headers: headers)
         
@@ -130,7 +132,7 @@ public extension URLSession {
                 logger.logResponse(response, data: data)
             }
             
-            return response
+            try response.checkValidity()
         } catch {
             if enableLogging {
                 logger.logError(error)
