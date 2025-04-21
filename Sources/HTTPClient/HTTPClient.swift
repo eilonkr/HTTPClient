@@ -17,9 +17,11 @@ public extension URLSession {
     func get<T: Decodable>(_ urlString: String,
                            headers: Headers = [:],
                            queryParams: QueryParams? = nil,
-                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys, enableLogging: Bool = true) async throws -> T {
+                           keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys,
+                           cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+                           enableLogging: Bool = true) async throws -> T {
         let url = try urlString.buildURL(queryParams: queryParams)
-        let urlRequest = createURLRequest(url: url, method: "GET", headers: headers)
+        let urlRequest = createURLRequest(url: url, method: "GET", cachePolicy: cachePolicy, headers: headers)
         
         if enableLogging {
             logger.logRequest(urlRequest)
@@ -146,10 +148,12 @@ public extension URLSession {
     private func createURLRequest(url: URL,
                                   method: String,
                                   body: Data? = nil,
+                                  cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
                                   headers: Headers) -> URLRequest {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method
         urlRequest.httpBody = body
+        urlRequest.cachePolicy = cachePolicy
         urlRequest.set(headers: headers)
         
         return urlRequest
