@@ -143,6 +143,77 @@ public extension URLSession {
             throw error
         }
     }
+
+    func put<T: Decodable, U: Encodable>(_ urlString: String,
+                                         body: U,
+                                         headers: Headers,
+                                         queryParams: QueryParams? = nil,
+                                         keyDecodingStrategry: KeyDecodingStrategy = .useDefaultKeys,
+                                         keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                                         enableLogging: Bool = true) async throws -> T {
+        let url = try urlString.buildURL(queryParams: queryParams)
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = keyEncodingStrategy
+        let body = try encoder.encode(body)
+        let urlRequest = createURLRequest(url: url, method: "PUT", body: body, headers: headers)
+
+        if enableLogging {
+            logger.logRequest(urlRequest)
+        }
+
+        do {
+            let (data, response) = try await self.data(for: urlRequest)
+
+            if enableLogging {
+                logger.logResponse(response, data: data)
+            }
+
+            try response.checkValidity()
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = keyDecodingStrategry
+            let result = try decoder.decode(T.self, from: data)
+            return result
+        } catch {
+            if enableLogging {
+                logger.logError(error)
+            }
+
+            throw error
+        }
+    }
+
+    func put<T: Encodable>(_ urlString: String,
+                           body: T,
+                           headers: Headers,
+                           queryParams: QueryParams? = nil,
+                           keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                           enableLogging: Bool = true) async throws {
+        let url = try urlString.buildURL(queryParams: queryParams)
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = keyEncodingStrategy
+        let body = try encoder.encode(body)
+        let urlRequest = createURLRequest(url: url, method: "PUT", body: body, headers: headers)
+
+        if enableLogging {
+            logger.logRequest(urlRequest)
+        }
+
+        do {
+            let (_, response) = try await self.data(for: urlRequest)
+
+            if enableLogging {
+                logger.logResponse(response, data: Data())
+            }
+
+            try response.checkValidity()
+        } catch {
+            if enableLogging {
+                logger.logError(error)
+            }
+
+            throw error
+        }
+    }
     
     // MARK: - Private
     private func createURLRequest(url: URL,
