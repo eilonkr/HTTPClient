@@ -45,7 +45,7 @@ extension Logger {
     func logError(_ error: Error) {
         self.error("""
         [🚫 Error]:
-        \(error.localizedDescription)
+        \(error.diagnosticDescription)
         """)
     }
 }
